@@ -1,0 +1,11 @@
+{
+  "name": "handoff-local",
+  "version": "0.1.0",
+  "description": "Local, dependency-free Git handoffs between AI coding tools",
+  "license": "MIT",
+  "bin": { "handoff": "handoff.cjs" },
+  "engines": { "node": ">=18" },
+  "files": ["handoff.cjs", "README.md", "LICENSE"],
+  "scripts": { "test": "node --test", "check": "node --check handoff.cjs" },
+  "keywords": ["git", "handoff", "codex", "claude-code", "cursor", "gemini"]
+}
