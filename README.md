@@ -8,19 +8,33 @@
 
 需要 **Node.js ≥18、npm、Git ≥2.31**。支持 Linux、macOS、WSL；hook 使用 POSIX shell。原生 Windows / PowerShell 未验证。无需 `npm install` 即可开发和测试。
 
-下载本项目提供的 `handoff-local-0.1.0.tgz` 后，在目标 Git 仓库中一条命令运行（将包路径换成下载位置）：
+通过 npm 在目标 Git 仓库中一条命令运行：
+
+```sh
+npx --yes handoff-local
+```
+
+或安装为 `handoff`：
+
+```sh
+npm install --global handoff-local
+```
+
+npm 包名是 `handoff-local`，CLI 命令名是 `handoff`。首次下载/安装需要网络；安装后的 CLI 与 hooks 仍然完全本地运行。不要使用 `npx handoff` 下载同名的无关包。
+
+也可以从 [GitHub Releases](https://github.com/chuchaoT/handoff/releases) 下载 `handoff-local-0.1.0.tgz` 后，使用本地包离线运行（将路径换成下载位置）：
 
 ```sh
 npx --offline --yes --package /path/to/handoff-local-0.1.0.tgz handoff
 ```
 
-或一条命令安装为 `handoff`：
+从本地包离线安装：
 
 ```sh
 npm install --offline --global /path/to/handoff-local-0.1.0.tgz
 ```
 
-本仓库已生成的包位于 `dist/handoff-local-0.1.0.tgz`。从源码重新打包：
+本地打包产物位于 `dist/handoff-local-0.1.0.tgz`。从源码重新打包：
 
 ```sh
 mkdir -p dist
@@ -33,7 +47,7 @@ npm pack --offline --pack-destination dist
 node /path/to/handoff/handoff.cjs --help
 ```
 
-**包尚未发布至 npm registry**；上述本地包与 `--offline` 命令可以使用，不要用 `npx handoff` 下载同名的无关包。将来发布 `handoff-local` 后也能通过包名运行，命令名仍为 `handoff`。本工具和所安装的 hooks 都不会调用 npm 或联网。
+本工具和所安装的 hooks 都不会调用 npm 或联网；只需初次安装时获取包，或者提前下载本地包以全程离线使用。
 
 ## 命令
 
@@ -51,7 +65,7 @@ handoff --help
 handoff --version
 ```
 
-未全局安装时，可把上述每条命令的 `handoff` 换为 `npx --offline --yes --package /path/to/handoff-local-0.1.0.tgz handoff`，或 `node /path/to/handoff.cjs`。
+未全局安装时，可把上述每条命令的 `handoff` 换为 `npx --yes handoff-local`；离线时用 `npx --offline --yes --package /path/to/handoff-local-0.1.0.tgz handoff`，或 `node /path/to/handoff.cjs`。
 
 从子目录运行也写到仓库根目录；`--notes` 路径相对于当前终端目录。参数错误、笔记文件不存在等操作错误返回 `2`。不支持的参数组合会在任何写入前拒绝。
 

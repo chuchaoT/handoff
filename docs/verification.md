@@ -35,4 +35,4 @@ Claude Code、Codex 和 Cursor 的完整应用会话未在此环境启动；配�
 
 ## 交付边界
 
-运行时代码为单个 `handoff.cjs`；MIT 许可证。npm registry 未发布，使用随附的本地包或源码运行。未启动服务、调用模型、读取聊天记录或执行任何远程发布。
+运行时代码为单个 `handoff.cjs`；MIT 许可证。初次实现验证使用本地包或源码运行，未启动服务、调用模型或读取聊天记录。后续公开发布由用户另行授权，包名为 `handoff-local`，GitHub 仓库为 `chuchaoT/handoff`。
