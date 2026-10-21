@@ -57,7 +57,7 @@ test('init creates six empty sections, metadata and commit subjects', t => {
   assert.match(md, /initial subject/);
 });
 
-test('default generation matches git status including HANDOFF and exact tracked counts', t => {
+test('default generation excludes HANDOFF and displays unquoted filenames with exact tracked counts', t => {
   const dir = repo(t);
   fs.writeFileSync(path.join(dir, 'base.txt'), 'one\nchanged\nextra\n');
   git(dir, 'add', 'base.txt');
@@ -66,14 +66,13 @@ test('default generation matches git status including HANDOFF and exact tracked 
   const result = cli(dir);
   assert.equal(result.status, 1, result.output); // Required human-written sections still empty.
   const body = section(read(dir), 3);
-  const files = git(dir, 'status', '--porcelain=v1', '-z', '--untracked-files=all').split('\0').filter(Boolean).map(s => s.slice(3));
+  const files = git(dir, 'status', '--porcelain=v1', '-z', '--untracked-files=all').split('\0').filter(Boolean).map(s => s.slice(3)).filter(name => name !== 'HANDOFF.md');
   const listed = body.split('\n').filter(s => s.startsWith('- '));
   assert.equal(listed.length, files.length);
-  for (const file of files) assert.ok(body.includes(JSON.stringify(file)), file);
-  assert.match(body, /"base.txt": \+3 -1/);
-  assert.match(body, /"new file.txt": \+2 -0/);
-  const lineCount = read(dir).split('\n').length - 1;
-  assert.ok(body.includes(`"HANDOFF.md": +${lineCount} -0`));
+  for (const file of files) assert.ok(body.includes(`- ${file}:`), file);
+  assert.match(body, /^- base.txt: \+3 -1$/m);
+  assert.match(body, /^- new file.txt: \+2 -0$/m);
+  assert.doesNotMatch(body, /HANDOFF\.md/);
   assert.doesNotMatch(read(dir), /changed|unstaged|hello|world/);
 });
 
@@ -84,7 +83,7 @@ test('large worktrees keep the entire list including remainder within ten lines'
   const body = section(read(dir), 3);
   assert.equal(body.split('\n').filter(s => s.startsWith('- ')).length, 9);
   assert.equal(body.split('\n').filter(s => s.trim()).length, 10);
-  assert.match(body, /另有 6 个文件/);
+  assert.match(body, /另有 5 个文件/);
 });
 
 test('check flags empty and placeholder sections with nonzero status and red output', t => {
@@ -101,7 +100,7 @@ test('check flags empty and placeholder sections with nonzero status and red out
 test('check accepts explicit none and all completed sections', t => {
   const dir = repo(t);
   cli(dir);
-  fill(dir, { 4: '无，尚未尝试其他方案。', 5: '无；npm test 已全部通过。' });
+  fill(dir, { 3: '', 4: '无，尚未尝试其他方案。', 5: '无；npm test 已全部通过。' });
   const result = cli(dir, 'check');
   assert.equal(result.status, 0, result.output);
 });
@@ -117,6 +116,7 @@ test('parenthesized placeholders and empty fenced blocks still count as missing'
 
 test('check warns when dirty worktree has empty section three', t => {
   const dir = repo(t);
+  fs.appendFileSync(path.join(dir, 'base.txt'), 'unfinished\n');
   cli(dir, 'init');
   fill(dir, { 3: '' });
   const result = cli(dir, 'check');
@@ -142,6 +142,7 @@ test('new commit and branch changes make handoff stale', t => {
 
 test('existing handoff is byte-for-byte preserved without force', t => {
   const dir = repo(t);
+  fs.appendFileSync(path.join(dir, 'base.txt'), 'initial work\n');
   cli(dir);
   fill(dir);
   const before = read(dir);
@@ -165,6 +166,7 @@ test('fill only prints actionable six-section prompt and never writes', t => {
 
 test('notes preserve raw text at end without corrupting existing sections', t => {
   const dir = repo(t);
+  fs.appendFileSync(path.join(dir, 'base.txt'), 'initial work\n');
   cli(dir);
   fill(dir);
   const before = read(dir);
@@ -253,10 +255,10 @@ test('special filenames, renamed and binary files do not break statistics', t =>
   fs.writeFileSync(path.join(dir, 'blob.bin'), Buffer.from([0, 1, 2]));
   cli(dir);
   const body = section(read(dir), 3);
-  assert.ok(body.includes(JSON.stringify(strange)));
-  assert.ok(body.includes('"renamed.txt"'));
-  assert.match(body, /"blob.bin": \+- --/);
-  assert.equal(body.split('\n').filter(s => s.startsWith('- ')).length, 4);
+  assert.ok(body.includes('- 奇怪\\n文件\\t\\".txt: +1 -0'));
+  assert.match(body, /^- renamed.txt: \+2 -2$/m);
+  assert.match(body, /^- blob.bin: \+- --$/m);
+  assert.equal(body.split('\n').filter(s => s.startsWith('- ')).length, 3);
 });
 
 test('only five most recent commit subjects appear', t => {

@@ -8,7 +8,7 @@ const { spawnSync } = require('node:child_process');
 
 const TITLES = ['当前目标', '已完成', '改到一半的文件', '试过但失败的方案', '没跑通的测试或报错', '下一步具体做什么'];
 const REQUIRED = [0, 3, 4, 5];
-const VERSION = '0.1.0';
+const VERSION = '0.1.1';
 const HELP = `handoff ${VERSION} — 跨 AI 编程工具的本地 Git 交接
 
 用法：
@@ -61,7 +61,7 @@ function status(root) {
     const previous = files.get(name);
     files.set(name, { name, source: source || previous?.source, untracked: code === '??' && !previous });
   }
-  return [...files.values()];
+  return [...files.values()].filter(file => file.name !== 'HANDOFF.md');
 }
 function lineCounts(root, name) {
   const filename = path.join(root, name);
@@ -113,7 +113,7 @@ function statistics(root, info, files) {
         deleted: value.deleted === '-' || old.deleted === '-' ? '-' : Number(value.deleted) + Number(old.deleted),
       };
     }
-    return `- ${JSON.stringify(file.name)}: +${value.added} -${value.deleted}`;
+    return `- ${JSON.stringify(file.name).slice(1, -1)}: +${value.added} -${value.deleted}`;
   }).concat(files.length > 10 ? [`另有 ${files.length - limit} 个文件`] : []).join('\n');
 }
 function notesBlock(notes) {
@@ -162,21 +162,11 @@ function generate(root, options, notes) {
   }
   const info = metadata(root);
   const subjects = info.commit === '(尚无提交)' ? '' : git(root, ['log', '-5', '--format=%s']).trimEnd().split('\n').map(s => `- ${s}`).join('\n');
-  let md = render(info, subjects, null, notes);
+  const changes = options.command === 'init' ? null : statistics(root, info, status(root));
+  const md = render(info, subjects, changes, notes);
   const mode = exists ? fs.statSync(filename).mode : 0o644;
   if (exists) atomicWrite(filename, md, mode);
   else fs.writeFileSync(filename, md, { flag: 'wx', mode });
-  if (options.command !== 'init') {
-    // Include HANDOFF.md itself. Re-render until its own line count stabilizes.
-    // Fixed metadata and one summary line per file make this converge quickly.
-    for (let attempt = 0; attempt < 5; attempt++) {
-      const files = status(root);
-      const next = render(info, subjects, statistics(root, info, files), notes);
-      if (next === md) break;
-      atomicWrite(filename, next, mode);
-      md = next;
-    }
-  }
   console.log(`${exists ? '已重建' : '已生成'} ${filename}`);
 }
 function parseSections(md) {
@@ -245,7 +235,8 @@ function fillPrompt() {
 1. 当前目标：要解决什么问题、验收标准、约束。
 2. 已完成：已落地的修改及验证结果。
 3. 改到一半的文件：按 git status --porcelain=v1 --untracked-files=all 和 git diff --stat 核实，
-   包含暂存、未暂存、未跟踪文件；只列文件名和增删行数，不贴 diff；最多 10 行。
+   包含暂存、未暂存、未跟踪文件，排除根目录 HANDOFF.md 自身；只列文件名和增删行数，不贴 diff；最多 10 行。
+   文件名不加外层引号，保留 JSON 字符转义，避免特殊文件名打乱列表。
    超过 10 个文件时列 9 个文件，再加一行“另有 N 个文件”。
 4. 试过但失败的方案：做过什么、为什么失败、避免重复尝试什么。
 5. 没跑通的测试或报错：具体命令、错误和未验证之处；没有失败请明确写“无”及已执行的验证。

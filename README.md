@@ -22,19 +22,23 @@ npm install --global handoff-local
 
 npm 包名是 `handoff-local`，CLI 命令名是 `handoff`。首次下载/安装需要网络；安装后的 CLI 与 hooks 仍然完全本地运行。不要使用 `npx handoff` 下载同名的无关包。
 
-也可以从 [GitHub Releases](https://github.com/chuchaoT/handoff/releases) 下载 `handoff-local-0.1.0.tgz` 后，使用本地包离线运行（将路径换成下载位置）：
+也可以先下载 npm 包，再使用本地包离线运行（后续将路径换成下载位置）：
 
 ```sh
-npx --offline --yes --package /path/to/handoff-local-0.1.0.tgz handoff
+npm pack handoff-local@0.1.1
+```
+
+```sh
+npx --offline --yes --package /path/to/handoff-local-0.1.1.tgz handoff
 ```
 
 从本地包离线安装：
 
 ```sh
-npm install --offline --global /path/to/handoff-local-0.1.0.tgz
+npm install --offline --global /path/to/handoff-local-0.1.1.tgz
 ```
 
-本地打包产物位于 `dist/handoff-local-0.1.0.tgz`。从源码重新打包：
+本地打包产物位于 `dist/handoff-local-0.1.1.tgz`。从源码重新打包：
 
 ```sh
 mkdir -p dist
@@ -65,7 +69,7 @@ handoff --help
 handoff --version
 ```
 
-未全局安装时，可把上述每条命令的 `handoff` 换为 `npx --yes handoff-local`；离线时用 `npx --offline --yes --package /path/to/handoff-local-0.1.0.tgz handoff`，或 `node /path/to/handoff.cjs`。
+未全局安装时，可把上述每条命令的 `handoff` 换为 `npx --yes handoff-local`；离线时用 `npx --offline --yes --package /path/to/handoff-local-0.1.1.tgz handoff`，或 `node /path/to/handoff.cjs`。
 
 从子目录运行也写到仓库根目录；`--notes` 路径相对于当前终端目录。参数错误、笔记文件不存在等操作错误返回 `2`。不支持的参数组合会在任何写入前拒绝。
 
@@ -112,16 +116,15 @@ handoff --version
 第三节示例：
 
 ```text
-- "src/main.js": +12 -3
-- "tests/new test.js": +28 -0
-- "HANDOFF.md": +41 -0
+- src/main.js: +12 -3
+- tests/new test.js: +28 -0
 ```
 
-- 文件集合来自 `git status --porcelain=v1 -z --untracked-files=all`，包括暂存、未暂存、未跟踪文件和 `HANDOFF.md` 本身；忽略文件遵循 Git 配置。
+- 文件集合来自 `git status --porcelain=v1 -z --untracked-files=all`，包括暂存、未暂存、未跟踪文件，排除根目录 `HANDOFF.md` 自身；忽略文件遵循 Git 配置。仅有交接文件自身的改动时，第三节可以为空。
 - 已跟踪文件读取本地 `git diff --stat HEAD` / `--numstat -z HEAD`；实际调用禁用外部 diff、textconv 和重命名折叠。计数是 **HEAD 到当前工作区的净变化**，合并暂存与未暂存变化；相互抵消或仅权限变化可以是 `+0 -0`。
 - 重命名按 Git status 的目标文件名列一行，计数合并旧路径删除与新路径新增。不会贴出补丁或源文件内容。
 - 未跟踪文本文件按本地行数记新增，末行没有换行也计一行。二进制文件的未知行数显示 `+- --`；子模块等无行数变化项显示 `+0 -0`。
-- **整个文件列表最多 10 个非空行**：至多 10 个文件；若超过 10 个，显示前 9 个，加一行 `另有 N 个文件`。顺序遵循 Git status。文件名使用 JSON 转义，路径中的换行、制表符不会额外占行。
+- **整个文件列表最多 10 个非空行**：至多 10 个文件；若超过 10 个，显示前 9 个，加一行 `另有 N 个文件`。顺序遵循 Git status。文件名不加外层引号，保留 JSON 字符转义，路径中的换行、制表符不会额外占行。
 - 空仓库使用 `(尚无提交)`；游离分支使用 `(detached HEAD)`。最近提交附录最多列五个标题。
 
 统计反映生成时的快照；运行过程中应避免同时更改仓库。检查只验证第三节是否缺失，不验证其中每一行是否仍与当前工作区一致；`--fill` 指示智能体重新核实。

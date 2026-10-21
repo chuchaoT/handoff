@@ -1,6 +1,6 @@
 {
   "name": "handoff-local",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Local, dependency-free Git handoffs between AI coding tools",
   "license": "MIT",
   "repository": { "type": "git", "url": "git+https://github.com/chuchaoT/handoff.git" },

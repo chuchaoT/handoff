@@ -1,5 +1,23 @@
 # 本地验证记录
 
+## 2026-10-21 两项格式修正
+
+范围：第三节排除根目录 `HANDOFF.md` 自身，文件名去掉外层引号并保留 JSON 字符转义；同步检查器、补全提示词和文档。生成时不再为自身计数循环重写。
+
+环境：Windows / PowerShell，Node.js v24.16.0、Git 2.54.0.windows.1。此轮初始验证时尚未发布 npm 或推送远程。
+
+- 先调整现有测试并确认三项因旧行为失败：包含自身、余量多计一个文件、仅有交接文件改动时误报第三节为空；修正后四项聚焦检查全部通过（另含真实业务改动仍报缺的检查）。
+- `npm run check`、`git diff --check` 通过。
+- 原测试夹具将 `os.devNull` 传给 Git；Windows 的 `\\.\nul` 被 Git 拒绝。仅在本地 `.git/windows-test-env.cjs` 中临时将其改为 `NUL`，并在测试进程 PATH 加入 Git 的 `usr/bin` 以运行 shell hooks；不改变运行时代码或提交测试环境适配。
+- 使用以上环境运行 `npm test`：27 项，22 通过、5 失败。其中“existing handoff is byte-for-byte preserved without force”和“notes preserve raw text at end without corrupting existing sections”原先依赖交接文件自身使第三节非空；改用真实业务文件改动作为夹具后，仅复跑这两项，2/2 通过。其他已通过用例的相关输入未变，复用结果，累计 24 项通过。
+- 其余三项未通过属于本机环境限制：`repository paths ending in whitespace are preserved` 和 `special filenames, renamed and binary files do not break statistics` 使用 Windows 不允许的换行/制表符/双引号路径；`force refuses symlink handoff instead of touching its target` 创建符号链接时返回 EPERM。这三项需在 Linux 重跑，不能宣称本次 27/27 通过。
+
+状态：VALIDATED_LOCAL。真实 Codex → Claude Code / Cursor 切换、Codex / Cursor 宿主实际触发会话结束 hook、接手工具重复追问次数均未实测。测试中直接运行 hook 命令不代表宿主已触发，也不构成需求验证。
+
+补丁发布准备：版本升为 `0.1.1`，CLI 与包元数据一致；`npm run check` 通过。重新执行现有测试得到 24 pass / 3 fail，仍为上述三项 Windows 环境限制。`npm pack --offline --pack-destination dist --json` 产出四文件零依赖包，解包后 `--version` 返回 `0.1.1`。这不替代 Linux 三项补验或真实宿主 hook 验证。
+
+## 2026-10-20 初版验证（历史记录）
+
 日期：2026-10-20。环境：Linux，Node.js v24.19.0、npm 11.9.0、Git 2.52.0。
 
 ## 自动测试
